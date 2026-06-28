@@ -61,7 +61,12 @@ export const getProductsMetadata = async (req, res) => {
 
 export const addProduct = async (req, res) => {
     try {
-        const {productData} = req.body
+        const { productData } = req.body;
+
+        console.log("========== PRODUCT DATA ==========");
+        console.log(productData);
+        console.log("Images:", productData.images);
+        console.log("=================================");
 
         if (!productData || !productData.title || !productData.category) {
             return res.status(400).json({
@@ -69,23 +74,25 @@ export const addProduct = async (req, res) => {
                 error: "Missing entries"
             });
         }
+
         productData.owner = req.user._id;
 
         const product = await Product.create(productData);
 
-
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             productData: product
-        })
+        });
+
     } catch (error) {
-        console.log(error)
-        res.status(500).json({
+        console.log("ADD PRODUCT ERROR:", error);
+
+        return res.status(500).json({
             success: false,
-            error: "Internal Server Error"
-        })
+            error: error.message
+        });
     }
-}
+};
 
 
 export const editProduct = async (req, res) => {
