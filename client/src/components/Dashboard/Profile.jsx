@@ -1,14 +1,17 @@
 import React, { useState } from "react";
+import { fetchUser } from "../../utility/userLocalStorage";
 
 export const Profile = () => {
+  const loggedInUser = fetchUser();
+
   const [userInfo, setUserInfo] = useState({
-    name: "Arvind Sahani",
-    email: "arvindk20212025@gmail.com",
-    batchYear: "2021",
-    hostel: "Manimala",
-    phone: "9695271037",
-    room: "304",
-    profilePic: null, // Add a property to store the profile picture
+    name: loggedInUser?.name || "",
+    email: loggedInUser?.email || "",
+    batchYear: loggedInUser?.batchYear || "",
+    hostel: loggedInUser?.hostel || "",
+    phone: loggedInUser?.phone || "",
+    room: loggedInUser?.room || "",
+    profilePic: loggedInUser?.profileImage || null,
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -19,12 +22,11 @@ export const Profile = () => {
 
   const handleSaveClick = () => {
     setIsEditing(false);
-    // Here, you can add logic to save changes to a server or database if needed
+    // TODO: Send updated profile to backend
   };
 
   const handleCancelClick = () => {
     setIsEditing(false);
-    // Optionally, reset changes to discard edits
   };
 
   const handleInputChange = (e) => {
@@ -37,40 +39,34 @@ export const Profile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+
     if (file) {
       const reader = new FileReader();
+
       reader.onloadend = () => {
         setUserInfo((prevState) => ({
           ...prevState,
-          profilePic: reader.result, // Store the base64-encoded image
+          profilePic: reader.result,
         }));
       };
+
       reader.readAsDataURL(file);
     }
   };
 
   return (
-    <div className=" p-14 px-24  border rounded shadow-lg">
+    <div className="p-14 px-24 border rounded shadow-lg">
       <div className="flex justify-between items-center mb-4">
-        <h2 className=" text-3xl font-semibold">Personal Profile</h2>
+        <h2 className="text-3xl font-semibold">Personal Profile</h2>
       </div>
 
       <div className="flex items-center mb-4 gap-10">
         <div className="flex-shrink-0">
-          {userInfo.profilePic ? (
-            <img
-              src={userInfo.profilePic}
-              alt="Profile"
-              className="w-48 h-48 rounded-full object-cover"
-            />
-          ) : (
-            // Display Arvind.png from public folder if no image is uploaded
-            <img
-              src="/Arvind.png"
-              alt="Profile"
-              className="w-48 h-48 rounded-full object-cover"
-            />
-          )}
+          <img
+            src={userInfo.profilePic || "/ankit.png"}
+            alt="Profile"
+            className="w-48 h-48 rounded-full object-cover"
+          />
 
           {isEditing && (
             <input
@@ -83,14 +79,13 @@ export const Profile = () => {
         </div>
 
         <div className="ml-4 flex-1">
-          <label className="block text-sm font-medium"></label>
           <input
             type="text"
             name="name"
             value={userInfo.name}
             onChange={handleInputChange}
             disabled={!isEditing}
-            className={`mt-1 block text-5xl bg-white`}
+            className="mt-1 block text-5xl bg-white w-full"
           />
         </div>
       </div>
@@ -113,7 +108,7 @@ export const Profile = () => {
         <div>
           <label className="block text-sm font-medium">Batch Year:</label>
           <input
-            type="number"
+            type="text"
             name="batchYear"
             value={userInfo.batchYear}
             onChange={handleInputChange}
@@ -126,7 +121,8 @@ export const Profile = () => {
 
         <div>
           <label className="block text-sm font-medium">Hostel:</label>
-          <select
+          <input
+            type="text"
             name="hostel"
             value={userInfo.hostel}
             onChange={handleInputChange}
@@ -134,10 +130,7 @@ export const Profile = () => {
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm ${
               isEditing ? "bg-white" : "bg-gray-100"
             }`}
-          >
-            <option value="Manimala">Manimala</option>
-            <option value="Shayadri">Shayadri</option>
-          </select>
+          />
         </div>
 
         <div>
@@ -178,6 +171,7 @@ export const Profile = () => {
             >
               Cancel
             </button>
+
             <button
               onClick={handleSaveClick}
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
