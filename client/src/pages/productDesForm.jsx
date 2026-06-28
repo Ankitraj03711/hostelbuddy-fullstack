@@ -1,110 +1,3 @@
-// import React, { useState } from 'react';
-// import {
-//   Dialog,
-//   DialogHeader,
-//   DialogBody,
-//   DialogFooter,
-//   Input,
-//   Textarea,
-//   Select,
-//   Option,
-//   Button
-// } from '@material-tailwind/react';
-
-// const ProductForm = () => {
-//   const [open, setOpen] = useState(true);
-//   const [formData, setFormData] = useState({
-//     productImage: '',
-//     description: '',
-//     title: '',
-//     category: '',
-//   });
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData({
-//       ...formData,
-//       [name]: value,
-//     });
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     // Handle form submission logic here
-//     console.log(formData);
-//     setOpen(false); // Close the dialog on form submission
-//   };
-
-//   return (
-//     <div className="flex bg-gray-300">
-//       {/* <Button color="blue" onClick={() => setOpen(true)}>
-//         Add Product
-//       </Button> */}
-//       <Dialog open={open} handler={setOpen} className="max-w-xl mx-auto">
-//         <DialogHeader className='bg-black text-white rounded-t-lg'>Product Information</DialogHeader>
-//         <DialogBody>
-//           <form className="w-full" onSubmit={handleSubmit}>
-//             <div className="mb-5">
-//               <Input
-//                 type="file"
-//                 name="productImage"
-//                 label="Product Image"
-//                 onChange={(e) => setFormData({ ...formData, productImage: e.target.files[0] })}
-//                 className='pb-8'
-//               />
-//             </div>
-
-//             <div className="mb-4">
-//               <Input
-//                 type="text"
-//                 name="title"
-//                 label="Title"
-//                 value={formData.title}
-//                 onChange={handleChange}
-//               />
-//             </div>
-
-//             <div className="mb-4">
-//               <Textarea
-//                 name="description"
-//                 label="Description"
-//                 value={formData.description}
-//                 onChange={handleChange}
-//               />
-//             </div>
-
-//             <div className="mb-4">
-//               <Select
-//                 name="category"
-//                 label="Category"
-//                 value={formData.category}
-//                 onChange={(value) => setFormData({ ...formData, category: value })}
-//               >
-//                 <Option value="Electronics">Electronics</Option>
-//                 <Option value="Fashion">Fashion</Option>
-//                 <Option value="Home">Home</Option>
-//                 <Option value="Books">Books</Option>
-//                 <Option value="Other">Other</Option>
-//               </Select>
-//             </div>
-
-//             <Button type="submit" className="w-full bg-black">
-//               Submit
-//             </Button>
-//           </form>
-//         </DialogBody>
-//         <DialogFooter>
-//         </DialogFooter>
-//       </Dialog>
-//     </div>
-//   );
-// };
-
-// export default ProductForm;
-
-
-
-
 import { Button, Card, Checkbox, Input, Option, Select, Textarea } from '@material-tailwind/react'
 import { MdAdd } from 'react-icons/md';
 import { useEffect, useState } from 'react';
@@ -233,76 +126,68 @@ const ProductForm = () => {
 		setImagePreviewUrl("")
 	}
 
+const handleSubmit = async () => {
+  try {
+    if (!formData.title || !formData.description || !formData.category) {
+      setErrorToast("Please fill all required fields");
+      return;
+    }
 
-	const handleSubmit = async () => {
-		try {
-			if (otherCategory) {
-				if (newCategory.title === "") {
-					console.log("Empty category")
-					return;
-				}
-				setFormSubmitLoading(true)
-				postDataFromApi('/categories/add', newCategory)
-					.then(dt => {
-						if (dt.success) {
-							formData.category = dt.newCategory._id;
+    if (!image) {
+      setErrorToast("Please select an image");
+      return;
+    }
 
-							const fd = new FormData();
-							fd.append('image', image);
+    setFormSubmitLoading(true);
 
-							postDataFromApi('/images/upload', fd)
-								.then(res => {
-									formData.images = res.url
-									postDataFromApi('/products/add', { productData: formData })
-										.then((data) => {
-											console.log(data);
-											setFormSubmitLoading(false);
-											setSuccessToast();
-										})
-										.catch((err) => {
-											setFormSubmitLoading(false);
-											setErrorToast("Some error occurred");
-											console.log(err)
-										})
-								})
+    if (otherCategory) {
+      if (newCategory.title === "") {
+        setFormSubmitLoading(false);
+        setErrorToast("Please enter category name");
+        return;
+      }
 
-						}
-					})
-			} else {
-				console.log(formData)
-				setFormSubmitLoading(true)
-				const fd = new FormData();
-				fd.append('image', image);
+      const dt = await postDataFromApi("/categories/add", newCategory);
 
-				postDataFromApi('/images/upload', fd)
-					.then(res => {
-						formData.images = res.url
-						postDataFromApi('/products/add', { productData: formData })
-							.then((data) => {
-								console.log(data);
-								setFormSubmitLoading(false);
-								setSuccessToast();
-							})
-							.catch((err) => {
-								setFormSubmitLoading(false);
-								console.log(err)
-							})
-					})
-			}
-		} catch (err) {
-			setFormSubmitLoading(false);
-			console.error("Error during image upload or form submission:", err);
-		}
-	};
+      if (dt.success) {
+        formData.category = dt.newCategory._id;
+      }
+    }
 
+    const fd = new FormData();
+    fd.append("image", image);
 
-	const handleCancel = () => {
+    console.log("Uploading Image...");
+    const imageRes = await postDataFromApi("/images/upload", fd);
+    console.log("Image Upload Response:", imageRes);
 
-	}
+    formData.images = imageRes.url;
 
+    console.log("Sending Product:", formData);
 
+    const productRes = await postDataFromApi("/products/add", {
+      productData: formData,
+    });
 
+    console.log("Product Response:", productRes);
 
+    setFormSubmitLoading(false);
+    setSuccessToast();
+    clearAllField();
+
+  } catch (err) {
+    console.error("Product Error:", err);
+    console.error("Server Response:", err.response?.data);
+
+    setFormSubmitLoading(false);
+
+    setErrorToast(
+      err.response?.data?.error ||
+      err.response?.data?.message ||
+      "Something went wrong"
+    );
+  }
+};
 	return (
 		<div className='px-72 py-5 bg-bgGray1'>
 			<Toast type={toastType} message={toastMessage} open={open} handleOpen={handleOpen} />
